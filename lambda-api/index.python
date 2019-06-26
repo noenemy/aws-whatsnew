@@ -1,4 +1,5 @@
 import boto3
+import json
 
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
 
@@ -51,12 +52,28 @@ def scan_table_allpages(table_name, filter_key=None, filter_value=None):
             break
 
     return items
+    
+def add_new_article(table_name, title, year, url, posted_date):
+    
+    
+    table = dynamodb.Table(table_name)
+    
+    response = table.put_item(
+       Item={
+            'year': year,
+            'title': title,
+            'url': url,
+            'posted_date': posted_date
+        }
+    )
+
 
 '''
 create_table()
 '''
 
+add_new_article('whatsnew_archive', 'Amazon FSx for Windows File Server now enables you to use a single AWS Managed AD with file systems across VPCs or accounts', 2019, 'https://aws.amazon.com/about-aws/whats-new/2019/06/amazon-fsx-for-windows-file-server-now-enables-you-to-use-a-single-aws-managed-ad-with-file-systems-across-vpcs-or-accounts/', '2019-06-25')
+
 rows = scan_table_allpages('whatsnew_archive')
 for row in rows:
     print row
-   
