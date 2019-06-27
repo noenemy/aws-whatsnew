@@ -3,8 +3,10 @@ import urllib2
 import datetime
 
 def get_whatsnew_urls(url):
-    whatsnew_page = urllib2.urlopen(url)
 
+    new_urls = []
+
+    whatsnew_page = urllib2.urlopen(url)
     page_source = whatsnew_page.read()
 
     elements = page_source.split('<')
@@ -23,10 +25,12 @@ def get_whatsnew_urls(url):
                 new_url = new_url[1:]
                 
                 if prev_url != new_url:
-                    print new_url
+                    new_urls.append(new_url)
                     prev_url = new_url
         else:
             pass
+        
+    return new_urls
 
 base_url = "https://aws.amazon.com/about-aws/whats-new"
 
@@ -37,4 +41,6 @@ month = datetime.datetime.now().month
 #get_whatsnew_urls(base_url + '/' + str(year))
 
 # monthly
-get_whatsnew_urls(base_url + '/' + str(year) + '/' + "{:02}".format(month))
+new_urls = get_whatsnew_urls(base_url + '/' + str(year) + '/' + "{:02}".format(month))
+
+print len(new_urls)
