@@ -1,46 +1,52 @@
-import sys
-import urllib2
 import datetime
+from lxml import html, etree
+import requests
 
-def get_whatsnew_urls(url):
+def get_whatsnew_url_list(year, month):
 
-    new_urls = []
+    url_list = []
 
-    whatsnew_page = urllib2.urlopen(url)
-    page_source = whatsnew_page.read()
+    base_url = "https://aws.amazon.com/about-aws/whats-new"
+    url = base_url + '/' + str(year) + '/' + "{:02}".format(month)
 
-    elements = page_source.split('<')
+    whatsnew_list_page = requests.get(url)
+    tree = html.fromstring(whatsnew_list_page.content)
 
-    prev_url = ''
+    whatsnew_list = tree.xpath('//li[@class="directory-item text whats-new"]/h3/a/@href')
 
-    for element in elements:
-        if element.startswith('a href'):
-            
-            new_url = element[7:]
-            if new_url.startswith('"//aws.amazon.com/about-aws/whats-new'):
-                cutoff ='">'
-                new_url = new_url.split(cutoff, 1)[0]
-                cutoff = '" '
-                new_url = new_url.split(cutoff, 1)[0]
-                new_url = new_url[1:]
-                
-                if prev_url != new_url:
-                    new_urls.append(new_url)
-                    prev_url = new_url
-        else:
-            pass
-        
-    return new_urls
+    for link in whatsnew_list:
+        url_list.append('https:' + link)
+    
+    return url_list
 
-base_url = "https://aws.amazon.com/about-aws/whats-new"
+def read_whatsnew_content(url):
+    
+    whatsnew_page = requests.get(url)
+    tree = html.fromstring(whatsnew_page.content)
+
+    title = tree.xpath('//div[@class="twelve columns"]/h1/a/text()')
+    posted_date = tree.xpath('//span[@class="date"]/text()')
+    content = ''
+    content_section1 = tree.xpath('//div[@class="aws-text-box"]/div/p')
+    content_section2 = tree.xpath('//div[@class="parsys content"]/div/div/p')
+
+    for part in content_section1:
+        content += etree.tostring(part, pretty_print=True)
+    for part in content_section2:
+        content += etree.tostring(part, pretty_print=True)
+
+    print(title)
+    print(posted_date)
+    print(content)
+
 
 year = datetime.datetime.now().year
 month = datetime.datetime.now().month
 
-# yearly
-#get_whatsnew_urls(base_url + '/' + str(year))
-
 # monthly
-new_urls = get_whatsnew_urls(base_url + '/' + str(year) + '/' + "{:02}".format(month))
+url_list = get_whatsnew_url_list(year, month)
 
-print len(new_urls)
+for url in url_list:
+    read_whatsnew_content(url)
+
+print(len(url_list))
