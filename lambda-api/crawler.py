@@ -1,29 +1,40 @@
 import sys
 import urllib2
+import datetime
 
-url = "https://aws.amazon.com/about-aws/whats-new/2018/11/"
-whatsnew_page = urllib2.urlopen(url)
+def get_whatsnew_urls(url):
+    whatsnew_page = urllib2.urlopen(url)
 
-page_source = whatsnew_page.read()
+    page_source = whatsnew_page.read()
 
-elements = page_source.split('<')
+    elements = page_source.split('<')
 
-prevUrl = ''
+    prev_url = ''
 
-for element in elements:
-    if element.startswith('a href'):
-        
-        newUrl = element[7:]
-        if newUrl.startswith('"//aws.amazon.com/about-aws/whats-new'):
-            cutoff ='">'
-            newUrl = newUrl.split(cutoff, 1)[0]
-            cutoff = '" '
-            newUrl = newUrl.split(cutoff, 1)[0]
-            newUrl = newUrl[1:]
+    for element in elements:
+        if element.startswith('a href'):
             
-            if prevUrl != newUrl:
-                print newUrl
-                prevUrl = newUrl
-    else:
-        pass
-    
+            new_url = element[7:]
+            if new_url.startswith('"//aws.amazon.com/about-aws/whats-new'):
+                cutoff ='">'
+                new_url = new_url.split(cutoff, 1)[0]
+                cutoff = '" '
+                new_url = new_url.split(cutoff, 1)[0]
+                new_url = new_url[1:]
+                
+                if prev_url != new_url:
+                    print new_url
+                    prev_url = new_url
+        else:
+            pass
+
+base_url = "https://aws.amazon.com/about-aws/whats-new"
+
+year = datetime.datetime.now().year
+month = datetime.datetime.now().month
+
+# yearly
+#get_whatsnew_urls(base_url + '/' + str(year))
+
+# monthly
+get_whatsnew_urls(base_url + '/' + str(year) + '/' + "{:02}".format(month))
