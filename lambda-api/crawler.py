@@ -1,6 +1,7 @@
 import datetime
-from lxml import html, etree
 import requests
+from lxml import html, etree
+from datetime import datetime
 
 def get_whatsnew_url_list(year, month):
 
@@ -19,34 +20,49 @@ def get_whatsnew_url_list(year, month):
     
     return url_list
 
-def read_whatsnew_content(url):
+def get_xpath_value_safe(tree, xpath_query, default_value):
+
+    value = tree.xpath(xpath_query)
+    if value is None:
+        return default_value
     
+    return value[0]
+
+def read_whatsnew_article(url):
+    
+    article = {}
+
     whatsnew_page = requests.get(url)
     tree = html.fromstring(whatsnew_page.content)
 
-    title = tree.xpath('//div[@class="twelve columns"]/h1/a/text()')
-    posted_date = tree.xpath('//span[@class="date"]/text()')
+    title = get_xpath_value_safe(tree, '//div[@class="twelve columns"]/h1/a/text()', '')
+    posted_date = get_xpath_value_safe(tree, '//span[@class="date"]/text()', '')
+    #if posted_date == '':
+        #TODO: raise invalid datetime value exception here!
+    posted_date = datetime.strptime(posted_date, '%b %d, %Y')
     content = ''
-    content_section1 = tree.xpath('//div[@class="aws-text-box"]/div/p')
-    content_section2 = tree.xpath('//div[@class="parsys content"]/div/div/p')
+    content_section1 = get_xpath_value_safe(tree, '//div[@class="aws-text-box"]/div/p', '')
+    content_section2 = get_xpath_value_safe(tree, '//div[@class="parsys content"]/div/div/p', '')
 
     for part in content_section1:
         content += etree.tostring(part, pretty_print=True)
     for part in content_section2:
         content += etree.tostring(part, pretty_print=True)
 
-    print(title)
-    print(posted_date)
-    print(content)
+    article["url"] = url
+    article["posted_date"] = posted_date.isoformat()
+    article["title"] = title
+    article["content"] = content
+    
+    return article
 
 
-year = datetime.datetime.now().year
-month = datetime.datetime.now().month
+year = datetime.now().year
+month = datetime.now().month
 
 # monthly
 url_list = get_whatsnew_url_list(year, month)
 
 for url in url_list:
-    read_whatsnew_content(url)
-
-print(len(url_list))
+    article = read_whatsnew_article(url)
+    print(article)
